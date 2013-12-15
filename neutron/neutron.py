@@ -110,13 +110,43 @@ class Neutron:
     """Subnet related operations"""
 
     def list_subnets(self):
-        pass
+        public_url = self.public_urls[0]
+        url = public_url + '/v2.0/subnets'
+        response = requests.get(url, headers=self.headers)
+        status_code = response.status_code
+        if status_code == 200:
+            data = response.json()
+            return data
+        else:
+            return None
 
     def show_subnet(self):
         pass
 
-    def create_subnet(self):
-        pass
+    def create_subnet(self, name, network_id, ip_version=4, cidr, allocation_start, allocation_end):
+        public_url = self.public_urls[0]
+        url = public_url + '/v2.0/subnets'
+        subnet_info = {
+            'subnet': {
+                'name': name,
+                'network_id': network_id,
+                'ip_version': ip_version,
+                'cidr': cidr,
+                'allocation_pools':[
+                    {
+                        'start': allocation_start,
+                        'end': allocation_end
+                    }
+                ]
+            }
+        }
+        response = requests.post(url, data=json.dumps(subnet_info), headers=self.headers)
+        status_code = response.status_code
+        if status_code == 201:
+            data = response.json()
+            return data
+        else:
+            return None
 
     def update_subnet(self):
         pass
