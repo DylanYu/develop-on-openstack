@@ -76,3 +76,6 @@ class Keystone:
         else:
             return self.neutron_public_urls
 
+    def get_keystone_host(self):
+        return self.keystone_host
+
