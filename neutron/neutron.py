@@ -4,59 +4,13 @@ import requests, json
 
 class Neutron:
 
-    def __init__(self, keystone_host, keystone_port, tenant_name, username, password):
-        self.set_keystone_endpoint(keystone_host, keystone_port)
-        self.set_user(tenant_name, username, password)
-        self.authenticate()
-        self.get_info_from_auth_data()
+    def __init__(self, keystone):
+        self.keystone = keystone
+        self.public_urls = keystone.get_neutron_public_urls()
+        self.create_headers()
         """treat keystone host as neutron host, typically"""
         """TODO: set neutron host"""
-        self.amend_url(keystone_host)
-
-    def set_keystone_endpoint(self, keystone_host, keystone_port):
-        self.keystone_host = keystone_host
-        self.keystone_port = keystone_port
-
-    def set_user(self, tenant_name, username, password):
-        self.tenant_name = tenant_name
-        self.username = username
-        self.password = password
-
-    def authenticate(self):
-        url = 'http://' + self.keystone_host + ':' + self.keystone_port + '/v2.0/tokens'
-        user_info ={
-            "auth":{
-                "tenantName":self.tenant_name, 
-                "passwordCredentials":{
-                    "username":self.username,
-                    "password":self.password
-                }
-            }
-        }
-        headers = {"Content-type": "application/json","Accept": "application/json"}
-        response = requests.post(url, data=json.dumps(user_info), headers=headers)
-        status_code = response.status_code
-        if status_code == 200:
-            self.auth_data = response.json()
-        else:
-            """deal with faults"""
-            print 'deal with faults'
-
-    def get_info_from_auth_data(self):
-        if not hasattr(self, 'auth_data'):
-            return
-        self.token_id = str(self.auth_data['access']['token']['id'])
-        self.headers = {
-            "Content-type": "application/json",
-            "Accept": "application/json", 
-            'X-Auth-Token':self.token_id
-        }
-        service_catalog_list = self.auth_data['access']['serviceCatalog']
-        self.public_urls = []
-        for service in service_catalog_list:
-            if service['name'] == 'neutron':
-                for endpoint in service['endpoints']:
-                    self.public_urls.append(endpoint['publicURL'])
+        self.amend_url(keystone.get_keystone_host())
 
     def amend_url(self, correct_host_name):
         if not hasattr(self, 'public_urls'):
@@ -65,6 +19,14 @@ class Neutron:
         for url in self.public_urls:
             urls.append(url.replace('controller', correct_host_name))
             self.public_urls = urls
+
+    def create_headers(self):
+        token_id = self.keystone.get_token_id()
+        self.headers = {
+            "Content-type": "application/json",
+            "Accept": "application/json", 
+            'X-Auth-Token':token_id
+        }
 
 
     """Network related operations"""
@@ -83,7 +45,7 @@ class Neutron:
     def show_network(self):
         pass
 
-    def create_network(self, name, admin_state_up):
+    def create_network(self, name, admin_state_up=True):
         public_url = self.public_urls[0]
         url = public_url + '/v2.0/networks'
         net_info = {
@@ -123,7 +85,7 @@ class Neutron:
     def show_subnet(self):
         pass
 
-    def create_subnet(self, name, network_id, ip_version=4, cidr, allocation_start, allocation_end):
+    def create_subnet(self, name, network_id, cidr, allocation_start, allocation_end, ip_version=4):
         public_url = self.public_urls[0]
         url = public_url + '/v2.0/subnets'
         subnet_info = {
@@ -147,6 +109,17 @@ class Neutron:
             return data
         else:
             return None
+
+    def create_sample_subnet(self, network_id):
+        # TODO: set typical config
+        name = 'sample_subnet'
+        cidr = '100.0.0.0/24'
+        allocation_start = '100.0.0.2'
+        allocation_end = '100.0.0.254'
+        ip_version = 4
+        return self.create_subnet(name=name, network_id=network_id, 
+                        cidr=cidr, allocation_start=allocation_start, 
+                        allocation_end=allocation_end, ip_version=ip_version)
 
     def update_subnet(self):
         pass
