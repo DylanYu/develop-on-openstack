@@ -35,16 +35,44 @@ class Keystone:
         self.status_code = response.status_code
         if self.status_code == 200:
             self.auth_data = response.json()
-            self.token_id = str(self.auth_data['access']['token']['id'])
+            self.parse_auth_data(self.auth_data)
             return True
         else:
             """deal with faults"""
             print 'Authentication failed.'
             return False
 
+    def parse_auth_data(self, auth_data):
+        self.token_id = str(self.auth_data['access']['token']['id'])
+        service_catalog_list = self.auth_data['access']['serviceCatalog']
+        self.nova_public_urls = []
+        self.neutron_public_urls = []
+        for service in service_catalog_list:
+            if service['name'] == 'nova':
+                for endpoint in service['endpoints']:
+                    self.nova_public_urls.append(endpoint['publicURL'])
+            if service['name'] == 'neutron':
+                for endpoint in service['endpoints']:
+                    self.neutron_public_urls.append(endpoint['publicURL'])
+
+    def is_authenticated(self):
+        return self.status_code == 200
+
     def get_token_id(self):
-        if self.status_code != 200:
+        if not self.is_authenticated():
             return None
         else:
             return self.token_id
+
+    def get_nova_public_urls(self):
+        if not self.is_authenticated():
+            return None
+        else:
+            return self.nova_public_urls
+
+    def get_neutron_public_urls(self):
+        if not self.is_authenticated():
+            return None
+        else:
+            return self.neutron_public_urls
 
