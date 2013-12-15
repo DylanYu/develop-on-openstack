@@ -25,7 +25,7 @@ class Neutron:
         self.headers = {
             "Content-type": "application/json",
             "Accept": "application/json", 
-            'X-Auth-Token':token_id
+            'X-Auth-Token':token_id,
         }
 
 
@@ -51,8 +51,8 @@ class Neutron:
         net_info = {
             'network': {
                 'name': name,
-                'admin_state_up': 'true' if admin_state_up else 'false'
-            }
+                'admin_state_up': 'true' if admin_state_up else 'false',
+            },
         }
         response = requests.post(url, data=json.dumps(net_info), headers=self.headers)
         status_code = response.status_code
@@ -97,10 +97,10 @@ class Neutron:
                 'allocation_pools':[
                     {
                         'start': allocation_start,
-                        'end': allocation_end
+                        'end': allocation_end,
                     }
                 ]
-            }
+            },
         }
         response = requests.post(url, data=json.dumps(subnet_info), headers=self.headers)
         status_code = response.status_code

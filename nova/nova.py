@@ -25,7 +25,7 @@ class Nova:
         self.headers = {
             "Content-type": "application/json",
             "Accept": "application/json", 
-            'X-Auth-Token':token_id
+            'X-Auth-Token':token_id,
         }
 
 
@@ -77,10 +77,10 @@ class Nova:
                 'imageRef': public_url + '/images/' + imageRef,
                 'networks': [
                     {
-                        'uuid': network_id
+                        'uuid': network_id,
                     }
                 ]
-            }
+            },
         }
         response = requests.post(url, data=json.dumps(server_info), headers=self.headers)
         status_code = response.status_code

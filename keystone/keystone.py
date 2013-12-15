@@ -22,13 +22,13 @@ class Keystone:
     def authenticate(self):
         url = 'http://' + self.keystone_host + ':' + self.keystone_port + '/v2.0/tokens'
         user_info ={
-            "auth":{
+            "auth": {
                 "tenantName":self.tenant_name, 
-                "passwordCredentials":{
-                    "username":self.username,
-                    "password":self.password
-                }
-            }
+                "passwordCredentials": {
+                    "username": self.username,
+                    "password": self.password
+                },
+            },
         }
         headers = {"Content-type": "application/json","Accept": "application/json"}
         response = requests.post(url, data=json.dumps(user_info), headers=headers)
