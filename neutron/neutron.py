@@ -46,6 +46,11 @@ class Neutron:
         if not hasattr(self, 'auth_data'):
             return
         self.token_id = str(self.auth_data['access']['token']['id'])
+        self.headers = {
+            "Content-type": "application/json",
+            "Accept": "application/json", 
+            'X-Auth-Token':self.token_id
+        }
         service_catalog_list = self.auth_data['access']['serviceCatalog']
         self.public_urls = []
         for service in service_catalog_list:
@@ -65,13 +70,35 @@ class Neutron:
     """Network related operations"""
 
     def list_networks(self):
-        pass
+        public_url = self.public_urls[0]
+        url = public_url + '/v2.0/networks'
+        response = requests.get(url, headers=self.headers)
+        status_code = response.status_code
+        if status_code == 200:
+            data = response.json()
+            return data
+        else:
+            return None
 
     def show_network(self):
         pass
 
-    def create_network(self):
-        pass
+    def create_network(self, name, admin_state_up):
+        public_url = self.public_urls[0]
+        url = public_url + '/v2.0/networks'
+        net_info = {
+            'network': {
+                'name': name,
+                'admin_state_up': 'true' if admin_state_up else 'false'
+            }
+        }
+        response = requests.post(url, data=json.dumps(net_info), headers=self.headers)
+        status_code = response.status_code
+        if status_code == 201:
+            data = response.json()
+            return data
+        else:
+            return None
 
     def update_network(self):
         pass
