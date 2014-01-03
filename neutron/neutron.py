@@ -1,6 +1,16 @@
 # SDK for Neutron ReSTful API
 
-import requests, json
+import os
+import sys
+
+reldir = os.path.join(os.path.dirname(__file__), '..', '..')
+absdir = os.path.abspath(reldir)
+sys.path.append(absdir)
+
+import requests
+import json
+
+from model.neutron.network import *
 
 class Neutron:
 
@@ -38,31 +48,32 @@ class Neutron:
         status_code = response.status_code
         if status_code == 200:
             data = response.json()
-            return data
+            networks = []
+            for e in data['networks']:
+                network = Network(e['name'], e['admin_state_up'], e['shared'], e['tenant_id'])
+                network.status = e['status']
+                network.uuid = e['id']
+                network.subnets = []
+                for subnet_id in e['subnets']:
+                    network.subnets.append(subnet_id)
+                networks.append(network)
+            return networks
         else:
             return None
 
     def show_network(self):
         pass
 
-    def create_network(self, name, admin_state_up=True):
-        public_url = self.public_urls[0]
-        url = public_url + '/v2.0/networks'
-        net_info = {
-            'network': {
-                'name': name,
-                'admin_state_up': 'true' if admin_state_up else 'false',
-            },
-        }
-        response = requests.post(url, data=json.dumps(net_info), headers=self.headers)
-        status_code = response.status_code
-        if status_code == 201:
-            data = response.json()
-            return data
-        else:
-            return None
-
     def create_network(self, network):
+        """Create a network defined by model
+
+        The network model only provides attributes name, admin_state_up and 
+        shared. After we successfully create the network and get the uuid 
+        responsed by server, we set uuid into the network object.
+
+        :param network: network object, with name, admin_state_up and shared 
+                        attributes already set.
+        """
         public_url = self.public_urls[0]
         url = public_url + '/v2.0/networks'
         net_info = {
@@ -77,15 +88,28 @@ class Neutron:
         status_code = response.status_code
         if status_code == 201:
             data = response.json()
-            return data
+            network.uuid = data['network']['id']
+            print data
+            return True
         else:
-            return None
+            return False
 
     def update_network(self):
         pass
 
-    def delete_network(self):
-        pass
+    def delete_network(self, network):
+        return self.delete_network_by_id(network.uuid)
+
+    def delete_network_by_id(self, network_id):
+        public_url = self.public_urls[0]
+        url = public_url + '/v2.0/networks/' + network_id
+        response = requests.delete(url, headers=self.headers)
+        status_code = response.status_code
+        if status_code == 204:
+            return True
+        else:
+            print 'Delete Network Failed.'
+            return False
 
 
     """Subnet related operations"""

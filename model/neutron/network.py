@@ -19,6 +19,16 @@ class Network:
     def __getitem__(self, key):
         return self.data[key]
 
+    def __str__(self):
+        return 'Network:\n' \
+                + 'id: ' + self.uuid + '\n' \
+                + 'name: ' + self.name + '\n' \
+                + 'admin_state_up: ' + str(self.admin_state_up) + '\n' \
+                + 'status: ' + self.status + '\n' \
+                + 'subnets: ' + str(self.subnets) + '\n' \
+                + 'shared: ' + str(self.shared) + '\n' \
+                + 'tenant_id: ' + self.tenant_id
+
     def show(self):
         """
         print self['name']
