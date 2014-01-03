@@ -7,10 +7,14 @@ sys.path.append(absdir)
 
 from keystone.keystone import *
 from neutron.neutron import *
+from model.neutron.network import *
 
-keystone_task = Keystone('114.212.189.132', '5000', 'admin', 'admin', 'ADMIN_PASS')
+keystone_task = Keystone('114.212.189.132', '5000', '5000', '35357', 'admin', 'admin', 'ADMIN_PASS')
 neutron_task = Neutron(keystone_task)
 print neutron_task.list_networks()
+
+network = Network('sdk_test_network', keystone_task.get_tenant_id())
+print neutron_task.create_network(network)
 #print neutron_task.create_network('sdk_network', False)
 #print neutron_task.list_subnets()
 #print neutron_task.create_subnet(name='net_sub', network_id='909b5bff-9ac6-4470-a5b0-07b7df51a08c', 
