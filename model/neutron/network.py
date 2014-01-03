@@ -1,10 +1,10 @@
 
 class Network:
-    def __init__(self, name, tenant_id, admin_state_up=True, shared=False):
+    def __init__(self, name, admin_state_up=True, shared=False, tenant_id=None):
         self.name = name
-        self.tenant_id = tenant_id
         self.admin_state_up = admin_state_up
         self.shared = shared
+        self.tenant_id = tenant_id
         # TODO: elegant attribute setter
         """
         self.data = {}
