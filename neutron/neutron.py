@@ -8,8 +8,8 @@ class Neutron:
         self.keystone = keystone
         self.public_urls = keystone.get_neutron_public_urls()
         self.create_headers()
-        """treat keystone host as neutron host, typically"""
-        """TODO: set neutron host"""
+        # treat keystone host as neutron host, typically
+        # TODO: set neutron host
         self.amend_url(keystone.get_keystone_host())
 
     def amend_url(self, correct_host_name):
@@ -52,6 +52,25 @@ class Neutron:
             'network': {
                 'name': name,
                 'admin_state_up': 'true' if admin_state_up else 'false',
+            },
+        }
+        response = requests.post(url, data=json.dumps(net_info), headers=self.headers)
+        status_code = response.status_code
+        if status_code == 201:
+            data = response.json()
+            return data
+        else:
+            return None
+
+    def create_network(self, network):
+        public_url = self.public_urls[0]
+        url = public_url + '/v2.0/networks'
+        net_info = {
+            'network': {
+                'name': network.name,
+                'admin_state_up': 'true' if network.admin_state_up else 'false',
+                'shared': 'true' if network.shared else 'false',
+                'tenant_id': self.keystone.get_tenant_id(),
             },
         }
         response = requests.post(url, data=json.dumps(net_info), headers=self.headers)
