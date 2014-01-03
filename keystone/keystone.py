@@ -1,18 +1,22 @@
 # SDk for Keytron ReSTful API
 
-
-import requests, json
+import requests
+import json
 
 class Keystone:
 
-    def __init__(self, keystone_host, keystone_port, tenant_name, username, password):
-        self.set_keystone_endpoint(keystone_host, keystone_port)
+    def __init__(self, keystone_host, public_port, internal_port, admin_port, tenant_name, username, password):
+        self.set_keystone_endpoint(keystone_host, public_port, internal_port, admin_port)
         self.set_user(tenant_name, username, password)
-        self.authenticate()
+        if self.authenticate():
+            self.create_headers()
+            self.request_tenant_id()
 
-    def set_keystone_endpoint(self, keystone_host, keystone_port):
+    def set_keystone_endpoint(self, keystone_host, public_port, internal_port, admin_port):
         self.keystone_host = keystone_host
-        self.keystone_port = keystone_port
+        self.public_port = public_port
+        self.internal_port = internal_port
+        self.admin_port = admin_port
 
     def set_user(self, tenant_name, username, password):
         self.tenant_name = tenant_name
@@ -20,7 +24,7 @@ class Keystone:
         self.password = password
 
     def authenticate(self):
-        url = 'http://' + self.keystone_host + ':' + self.keystone_port + '/v2.0/tokens'
+        url = 'http://' + self.keystone_host + ':' + self.public_port + '/v2.0/tokens'
         user_info ={
             "auth": {
                 "tenantName":self.tenant_name, 
@@ -32,14 +36,33 @@ class Keystone:
         }
         headers = {"Content-type": "application/json","Accept": "application/json"}
         response = requests.post(url, data=json.dumps(user_info), headers=headers)
-        self.status_code = response.status_code
-        if self.status_code == 200:
+        self.auth_status_code = response.status_code
+        if self.auth_status_code == 200:
             self.auth_data = response.json()
             self.parse_auth_data(self.auth_data)
             return True
         else:
             """deal with faults"""
             print 'Authentication failed.'
+            return False
+
+    def create_headers(self):
+            self.headers = {
+                'Content-type': 'application/json',
+                'Accept': 'application/json',
+                'X-Auth-Token':self.token_id,
+            }
+
+    def request_tenant_id(self):
+        url = 'http://' + self.keystone_host + ':'+ self.admin_port + '/v2.0/tenants?name=' + self.tenant_name
+        response = requests.get(url, headers=self.headers)
+        self.request_tenant_id_status = response.status_code
+        if self.request_tenant_id_status == 200:
+            self.tenant_data = response.json()
+            self.parse_tenant_data(self.tenant_data)
+            return True
+        else:
+            print 'Request Tenant ID Failed.'
             return False
 
     def parse_auth_data(self, auth_data):
@@ -55,8 +78,14 @@ class Keystone:
                 for endpoint in service['endpoints']:
                     self.neutron_public_urls.append(endpoint['publicURL'])
 
+    def parse_tenant_data(self, tenant_data):
+        self.tenant_id = self.tenant_data['tenant']['id']
+
     def is_authenticated(self):
-        return self.status_code == 200
+        return self.auth_status_code == 200
+
+    def request_tenant_id_success(self):
+        return self.request_tenant_id_status == 200
 
     def get_token_id(self):
         if not self.is_authenticated():
@@ -78,4 +107,10 @@ class Keystone:
 
     def get_keystone_host(self):
         return self.keystone_host
+
+    def get_tenant_id(self):
+        if self.request_tenant_id_success():
+            return self.tenant_id
+        else:
+            return None
 
