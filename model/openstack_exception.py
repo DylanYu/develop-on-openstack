@@ -1,7 +1,4 @@
 
-import json
-
 class OpenStackException(Exception):
-    def __init__(self, response):
-        self.status = response.status
-
+    def __init__(self, json_obj):
+        pass
