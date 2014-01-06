@@ -4,15 +4,17 @@ import requests
 import json
 
 class Keystone:
-
-    def __init__(self, keystone_host, public_port, internal_port, admin_port, tenant_name, username, password):
-        self.set_keystone_endpoint(keystone_host, public_port, internal_port, admin_port)
+    def __init__(self, keystone_host, public_port, internal_port, 
+                admin_port, tenant_name, username, password):
+        self.set_keystone_endpoint(keystone_host, public_port, 
+                                    internal_port, admin_port)
         self.set_user(tenant_name, username, password)
         if self.authenticate():
             self.create_headers()
             self.request_tenant_id()
 
-    def set_keystone_endpoint(self, keystone_host, public_port, internal_port, admin_port):
+    def set_keystone_endpoint(self, keystone_host, public_port,
+                             internal_port, admin_port):
         self.keystone_host = keystone_host
         self.public_port = public_port
         self.internal_port = internal_port
@@ -24,7 +26,8 @@ class Keystone:
         self.password = password
 
     def authenticate(self):
-        url = 'http://' + self.keystone_host + ':' + self.public_port + '/v2.0/tokens'
+        url = 'http://' + self.keystone_host + ':' \
+                + self.public_port + '/v2.0/tokens'
         user_info ={
             "auth": {
                 "tenantName":self.tenant_name, 
@@ -34,8 +37,12 @@ class Keystone:
                 },
             },
         }
-        headers = {"Content-type": "application/json","Accept": "application/json"}
-        response = requests.post(url, data=json.dumps(user_info), headers=headers)
+        headers = {
+            "Content-type": "application/json",
+            "Accept": "application/json"
+        }
+        response = requests.post(url, data=json.dumps(user_info), 
+                                headers=headers)
         self.auth_status_code = response.status_code
         if self.auth_status_code == 200:
             self.auth_data = response.json()
@@ -54,7 +61,8 @@ class Keystone:
         }
 
     def request_tenant_id(self):
-        url = 'http://' + self.keystone_host + ':'+ self.admin_port + '/v2.0/tenants?name=' + self.tenant_name
+        url = 'http://' + self.keystone_host + ':'+ self.admin_port \
+                + '/v2.0/tenants?name=' + self.tenant_name
         response = requests.get(url, headers=self.headers)
         self.request_tenant_id_status = response.status_code
         if self.request_tenant_id_status == 200:
@@ -69,21 +77,23 @@ class Keystone:
         try:
             self.token_id = str(self.auth_data['access']['token']['id'])
             service_catalog_list = self.auth_data['access']['serviceCatalog']
-            self.nova_public_urls = []
-            self.neutron_public_urls = []
-            for service in service_catalog_list:
+        except KeyError as e:
+            print 'KeyError:', e
+            self.token_id = None
+            service_caralog_list = None
+        self.nova_public_urls = []
+        self.neutron_public_urls = []
+        for service in service_catalog_list:
+            try:
                 if service['name'] == 'nova':
                     for endpoint in service['endpoints']:
                         self.nova_public_urls.append(endpoint['publicURL'])
                 if service['name'] == 'neutron':
                     for endpoint in service['endpoints']:
                         self.neutron_public_urls.append(endpoint['publicURL'])
-        except KeyError as e:
-            print 'KeyError:', e
-            self.token_id = None
-            service_caralog_list = None
-            self.nova_public_urls = None
-            self.neutron_public_urls = None
+            except KeyError:
+                self.nova_public_urls = None
+                self.neutron_public_urls = None
 
     def parse_tenant_data(self, tenant_data):
         self.tenant_id = self.tenant_data['tenant']['id']
