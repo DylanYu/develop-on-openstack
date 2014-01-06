@@ -47,11 +47,11 @@ class Keystone:
             return False
 
     def create_headers(self):
-            self.headers = {
-                'Content-type': 'application/json',
-                'Accept': 'application/json',
-                'X-Auth-Token':self.token_id,
-            }
+        self.headers = {
+            'Content-type': 'application/json',
+            'Accept': 'application/json',
+            'X-Auth-Token':self.token_id,
+        }
 
     def request_tenant_id(self):
         url = 'http://' + self.keystone_host + ':'+ self.admin_port + '/v2.0/tenants?name=' + self.tenant_name
@@ -66,26 +66,39 @@ class Keystone:
             return False
 
     def parse_auth_data(self, auth_data):
-        self.token_id = str(self.auth_data['access']['token']['id'])
-        service_catalog_list = self.auth_data['access']['serviceCatalog']
-        self.nova_public_urls = []
-        self.neutron_public_urls = []
-        for service in service_catalog_list:
-            if service['name'] == 'nova':
-                for endpoint in service['endpoints']:
-                    self.nova_public_urls.append(endpoint['publicURL'])
-            if service['name'] == 'neutron':
-                for endpoint in service['endpoints']:
-                    self.neutron_public_urls.append(endpoint['publicURL'])
+        try:
+            self.token_id = str(self.auth_data['access']['token']['id'])
+            service_catalog_list = self.auth_data['access']['serviceCatalog']
+            self.nova_public_urls = []
+            self.neutron_public_urls = []
+            for service in service_catalog_list:
+                if service['name'] == 'nova':
+                    for endpoint in service['endpoints']:
+                        self.nova_public_urls.append(endpoint['publicURL'])
+                if service['name'] == 'neutron':
+                    for endpoint in service['endpoints']:
+                        self.neutron_public_urls.append(endpoint['publicURL'])
+        except KeyError as e:
+            print 'KeyError:', e
+            self.token_id = None
+            service_caralog_list = None
+            self.nova_public_urls = None
+            self.neutron_public_urls = None
 
     def parse_tenant_data(self, tenant_data):
         self.tenant_id = self.tenant_data['tenant']['id']
 
     def is_authenticated(self):
-        return self.auth_status_code == 200
+        try:
+            return self.auth_status_code == 200
+        except AttributeError:
+            return False
 
     def request_tenant_id_success(self):
-        return self.request_tenant_id_status == 200
+        try:
+            return self.request_tenant_id_status == 200
+        except AttributeError:
+            return False
 
     def get_token_id(self):
         if not self.is_authenticated():
@@ -109,8 +122,13 @@ class Keystone:
         return self.keystone_host
 
     def get_tenant_id(self):
+        if not self.is_authenticated():
+            return None
         if self.request_tenant_id_success():
-            return self.tenant_id
+            try:
+                return self.tenant_id
+            except AttributeError:
+                return None
         else:
             return None
 
