@@ -1,12 +1,12 @@
 import os
 import sys
 
-reldir = os.path.join(os.path.dirname(__file__), '..')
-absdir = os.path.abspath(reldir)
-sys.path.append(absdir)
+#reldir = os.path.join(os.path.dirname(__file__), '..')
+#absdir = os.path.abspath(reldir)
+#sys.path.append(absdir)
 
-from neutron import neutron
-from model.neutron import network
+from osdk.neutron import neutron
+from osdk.model.neutron import network
 
 class FlatNet:
 
